@@ -1,4 +1,5 @@
 hello = "hello world"
 print(hello+"!")
-name = "Sandeep Doebar"
-print ("my name is " + name)
+firstname = "Sandeep"
+secondname = "Doebar"
+print ("my name is " + firstname + " " + secondname)

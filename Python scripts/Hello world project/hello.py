@@ -1,2 +1,4 @@
 hello = "hello world"
-print(hello)
+print(hello+"!")
+name = "Sandeep Doebar"
+print ("my name is " + name)

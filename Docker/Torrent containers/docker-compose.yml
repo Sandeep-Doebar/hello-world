@@ -1,0 +1,99 @@
+version: "3"
+
+networks:
+
+  mullvad:
+    name: mullvad
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "172.20.20.0/24"
+        
+services:
+
+  gluetun:
+    image: qmcgaw/gluetun
+    container_name: gluetun
+
+    cap_add:
+      - NET_ADMIN
+    networks:
+      - mullvad
+    ports:
+      - 8888:8888/tcp # HTTP proxy
+      - 8112:8112/tcp # Service: Deluge - WEBUI
+      - 58846:58846/tcp # Service: Deluge - DEAMON
+      - 6881:6881/udp
+      - 6881:6881/tcp
+      - 8388:8388/tcp
+      - 8388:8388/udp
+    volumes:
+      - ${VOLUME_GLUETUN_MAIN}/:/gluetun
+      - ${VOLUME_BASE}/gluetun/iptables:/iptables
+    environment:
+    # See https://github.com/qdm12/gluetun/wiki
+      - TZ=${TZ}
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - VPN_SERVICE_PROVIDER=mullvad
+      - VPN_TYPE=wireguard
+      - WIREGUARD_PRIVATE_KEY=aPCbfIPFHQKpJ4qynMrjH9CxkPICOF04AayTjzrN8UY=
+      - WIREGUARD_ADDRESSES=10.67.121.83/32
+      - SERVER_CITIES=Amsterdam
+      - HEALTH_TARGET_ADDRESS=protonvpn.com:443
+      - HEALTH_VPN_DURATION_INITIAL=12s
+      - HEALTH_VPN_DURATION_ADDITION=5s
+      - FIREWALL_VPN_INPUT_PORTS=59552
+      - FIREWALL=on
+      - FIREWALL_OUTBOUND_SUBNETS=172.25.1.0/24
+     # WEBUI PORT DELUGE
+     #- FIREWALL_VPN_INPUT_PORTS=
+      - DOT=on
+      - DOT_PROVIDERS=cloudflare
+      - DOT_VERBOSITY=1
+      - DOT_VERBOSITY_DETAILS=0
+      - DOT_IPV6=off
+      - BLOCK_MALICIOUS=on
+      - BLOCK_SURVEILLANCE=on
+      - BLOCK_ADS=on
+      - DNS_UPDATE_PERIOD=24h
+      - HTTPPROXY=on
+      - HTTPPROXY_LOG=on
+      - HTTPPROXY_STEALTH=on
+      - SHADOWSOCKS=off
+      - SHADOWSOCKS_LOG=on
+    security_opt:
+      - no-new-privileges:true
+      
+#  vpn-ready:
+#    build: .
+#    restart: always
+#    command: bash -c "wait-for-healthy-container.sh gluetun 120"
+#    networks:
+#      - web
+#    depends_on: 
+#      - gluetun
+      
+  deluge:
+    image: lscr.io/linuxserver/deluge:latest
+    container_name: deluge
+    environment:
+      - TZ=${TZ}
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - DELUGE_LOGLEVEL=info #optional
+    network_mode: "service:gluetun"
+    # Defined in gluetun
+    #ports:
+    #  - 6881:6881/tcp
+    #  - 6881:6881/udp
+    #  - 8113:8112/tcp
+    volumes:
+      - ${VOLUME_BASE}/deluge/config:/config
+      - ${VOLUME_DOWNLOADS}/:/downloads
+    restart: unless-stopped
+    # No longer supported in compose v3:
+    #depends_on:
+    #  gluetun:
+    #   condition: service_healthy
+  

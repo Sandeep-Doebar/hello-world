@@ -1,5 +1,5 @@
 hello = "hello world"
 print(hello+"!")
 firstname = "Sandeep"
-secondname = "Doebar"
+lastname = "Doebar"
 print ("my name is " + firstname + " " + secondname)
